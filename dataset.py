@@ -1,0 +1,110 @@
+import numpy as np
+import decode
+import functions
+import random
+import tensorflow as tf
+import math
+import settings
+
+
+class SongData:
+    def __init__(self, file):
+        self.events = np.load(file)
+
+    def decode(self, output_name):
+        decode.decode(self.events, output_name)
+
+
+class DataSequence(tf.keras.utils.Sequence):
+    def __init__(self, dir_path, batch_size, seq_len, train=settings.train_split, val=settings.val_split):
+        self.files = functions.get_files(dir_path, '.npy')
+        self.file_dict = {
+            'train': self.files[:int(len(self.files) * train)],
+            'val': self.files[int(len(self.files) * train):int(len(self.files) * (train+val))],
+            'test': self.files[int(len(self.files) * (train+val)):],
+        }
+        self.batch_size = batch_size
+        self.seq_len = seq_len
+
+        # check all files are long enough
+        for file in self.files:
+            if len(np.load(file)) <= seq_len:
+                print(f'File {file} is too short. Please remove and try again.')
+
+    def __len__(self):
+        return math.ceil(len(self.file_dict['train']) / self.batch_size)
+
+    def __getitem__(self, idx, source='train'):
+        if idx == 0:
+            random.shuffle(self.file_dict[source])
+        batch = self.file_dict[source][idx * self.batch_size:(idx + 1) * self.batch_size]
+        seqs = []
+        for file in batch:
+            seqs.append(_get_seq(file, self.seq_len + 1))
+        return tf.convert_to_tensor([seq[:-1] for seq in seqs]), tf.convert_to_tensor([seq[1:] for seq in seqs])
+
+    def get_data(self, source):
+        files = self.file_dict[source]
+        seqs = []
+        for file in files:
+            seqs.append(_get_seq(file, self.seq_len + 1))
+        while len(seqs) % self.batch_size != 0:
+            seqs.pop()
+        print(f'{source} data has length {len(seqs)}')
+        return tf.convert_to_tensor([seq[:-1] for seq in seqs]), tf.convert_to_tensor([seq[1:] for seq in seqs])
+        # return get_all_of_type(self.file_dict, source, self.seq_len, step=500, batch_size=settings.batch_size)
+
+
+class Dataset:
+    def __init__(self, dir_path, train=settings.train_split, val=settings.val_split):
+        self.files = functions.get_files(dir_path, '.npy')
+        self.file_dict = {
+            'train': self.files[:int(len(self.files) * train)],
+            'val': self.files[int(len(self.files) * train):int(len(self.files) * (train+val))],
+            'test': self.files[int(len(self.files) * (train+val)):],
+        }
+
+    def get_batch(self, batch_size, seq_len, batch_type='train'):
+        batch_files = random.sample(self.file_dict[batch_type], k=batch_size)
+        batch_data = [_get_seq(file, seq_len) for file in batch_files]
+
+        while None in batch_data:  # self explanatory, keeps pulling until you find a good batch ig
+            print("Batch has a file that is too short, pulling new batch...")
+            batch_files = random.sample(self.file_dict[batch_type], k=batch_size)
+            batch_data = [_get_seq(file, seq_len) for file in batch_files]
+        return np.array(batch_data)  # batch_size, seq_len
+
+    def get_all(self, seq_len, step=1):
+        train_x, train_y = get_all_of_type(self.file_dict, 'train', seq_len, step)
+        val_x, val_y = get_all_of_type(self.file_dict, 'val', seq_len, step)
+        test_x, test_y = get_all_of_type(self.file_dict, 'test', seq_len, step)
+        return train_x, train_y, val_x, val_y, test_x, test_y
+
+
+def _get_seq(file, seq_len):
+    data = np.load(file)
+    data_length = len(data)
+    if seq_len > data_length:
+        # I don't think padding is a good solution.... or not
+        return None
+    else:
+        start = random.randrange(0, data_length - seq_len)
+        seq = data[start:start + seq_len]
+    return seq
+
+
+def get_all_of_type(file_dict, batch_type, seq_len, step=1, batch_size=1):
+    x = []
+    y = []
+    for file in file_dict[batch_type]:
+        cur_data = np.load(file)
+        while len(cur_data) > seq_len + 1:
+            x.append(cur_data[:seq_len])
+            y.append(cur_data[1:seq_len+1])  # if seq2seq, use [1:seq_len+1]
+            cur_data = np.delete(cur_data, range(step))
+    while len(x) % batch_size != 0:  # for validation, this needs to be a multiple of batch_size pepeHands
+        x.pop()
+        y.pop()
+    x, y = tf.convert_to_tensor(x), tf.convert_to_tensor(y)
+    print(f'{batch_type} data: {len(x)} elements of shape {x.shape}.')
+    return x, y
