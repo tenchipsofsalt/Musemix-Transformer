@@ -1,10 +1,11 @@
 import numpy as np
-import decode
+import decode2
 import functions
 import random
 import tensorflow as tf
 import math
 import settings
+import preprocess3
 
 
 class SongData:
@@ -12,12 +13,20 @@ class SongData:
         self.events = np.load(file)
 
     def decode(self, output_name):
-        decode.decode(self.events, output_name)
+        decode2.decode(self.events, output_name)
 
 
 class DataSequence(tf.keras.utils.Sequence):
-    def __init__(self, dir_path, batch_size, seq_len, train=settings.train_split, val=settings.val_split):
-        self.files = functions.get_files(dir_path, '.npy')
+    def __init__(self, dir_names, batch_size, seq_len, train=settings.train_split, val=settings.val_split):
+        self.files = []
+
+        # artists
+        count = 0
+        for dir_name in dir_names:
+            count += 1
+            for file in functions.get_files(f'Music/{dir_name}/wordEvents/', '.npy'):
+                self.files.append([file, count])
+        random.shuffle(self.files)
         self.file_dict = {
             'train': self.files[:int(len(self.files) * train)],
             'val': self.files[int(len(self.files) * train):int(len(self.files) * (train+val))],
@@ -28,7 +37,7 @@ class DataSequence(tf.keras.utils.Sequence):
 
         # check all files are long enough
         for file in self.files:
-            if len(np.load(file)) <= seq_len:
+            if len(np.load(file[0])) <= seq_len:
                 print(f'File {file} is too short. Please remove and try again.')
 
     def __len__(self):
@@ -40,8 +49,8 @@ class DataSequence(tf.keras.utils.Sequence):
         batch = self.file_dict[source][idx * self.batch_size:(idx + 1) * self.batch_size]
         seqs = []
         for file in batch:
-            seqs.append(_get_seq(file, self.seq_len + 1))
-        return tf.convert_to_tensor([seq[:-1] for seq in seqs]), tf.convert_to_tensor([seq[1:] for seq in seqs])
+            seqs.append(preprocess3.note_shift(_get_seq(file, self.seq_len + 1), random.choice(settings.shifts)))
+        return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 1) for seq in seqs]
 
     def get_data(self, source):
         files = self.file_dict[source]
@@ -51,8 +60,8 @@ class DataSequence(tf.keras.utils.Sequence):
         while len(seqs) % self.batch_size != 0:
             seqs.pop()
         print(f'{source} data has length {len(seqs)}')
-        return tf.convert_to_tensor([seq[:-1] for seq in seqs]), tf.convert_to_tensor([seq[1:] for seq in seqs])
-        # return get_all_of_type(self.file_dict, source, self.seq_len, step=500, batch_size=settings.batch_size)
+        return tf.convert_to_tensor([np.delete(seq, -1) for seq in seqs]), \
+               tf.convert_to_tensor([np.delete(seq, 1) for seq in seqs])
 
 
 class Dataset:
@@ -82,14 +91,15 @@ class Dataset:
 
 
 def _get_seq(file, seq_len):
-    data = np.load(file)
+    data = np.load(file[0])
     data_length = len(data)
     if seq_len > data_length:
         # I don't think padding is a good solution.... or not
         return None
     else:
-        start = random.randrange(0, data_length - seq_len)
-        seq = data[start:start + seq_len]
+        start = random.randrange(0, data_length - seq_len + 1)
+        seq = data[start:start + seq_len - 1]
+    seq = np.append([file[1] + settings.artist_offset], seq)
     return seq
 
 
@@ -108,3 +118,4 @@ def get_all_of_type(file_dict, batch_type, seq_len, step=1, batch_size=1):
     x, y = tf.convert_to_tensor(x), tf.convert_to_tensor(y)
     print(f'{batch_type} data: {len(x)} elements of shape {x.shape}.')
     return x, y
+

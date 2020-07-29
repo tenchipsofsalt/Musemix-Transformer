@@ -9,25 +9,34 @@ def steps2ticks(steps, bpm):
 
 def bin2vel(v_bin):
     if v_bin == 1:
-        return 31
+        return 55
     elif v_bin == 2:
-        return 47
+        return 65
     elif v_bin == 3:
-        return 63
+        return 75
     elif v_bin == 4:
-        return 79
+        return 85
     elif v_bin == 5:
         return 95
     else:
-        return 127
+        return 105
 
 
-def decode(events, output_name):
+def decode(events, output_name, touhou=False):
     mid = mido.MidiFile(ticks_per_beat=settings.ticks_per_beat)
     track = mido.MidiTrack()
     mid.tracks.append(track)
-    track.append(mido.Message('control_change', control=7, value=127, time=0))
-    track.append(mido.Message('control_change', control=10, value=64, time=0))
+    if touhou:
+        track.append(mido.Message('control_change', control=0, value=0, time=0))
+        track.append(mido.Message('control_change', control=32, value=0, time=0))
+        track.append(mido.Message('control_change', control=7, value=125, time=0))
+        track.append(mido.Message('control_change', control=11, value=120, time=0))
+        track.append(mido.Message('control_change', control=10, value=32, time=0))
+        track.append(mido.Message('control_change', control=91, value=50, time=0))
+        track.append(mido.Message('control_change', control=93, value=40, time=0))
+    else:
+        track.append(mido.Message('control_change', control=7, value=127, time=0))
+        track.append(mido.Message('control_change', control=10, value=64, time=0))
     cur_vel = 0
     cur_tempo = 120  # change to 0 if you want no default tempo (wait for tempo token)
     cur_pause = 0
@@ -47,7 +56,7 @@ def decode(events, output_name):
             if cur_tempo == 0:
                 print("No tempo found, continuing...")
                 continue
-            note = event - settings.note_offset
+            note = event - settings.note_offset - 1
             if note <= settings.note_dim // 2:
                 found_pause = False  # just checking to make sure the note isn't length 0
                 for j in range(i + 1, event_count):
@@ -59,10 +68,10 @@ def decode(events, output_name):
                             track.append(mido.Message('note_on', note=note, velocity=cur_vel, time=cur_pause))
                             cur_pause = 0
                         else:
-                            print(f'Found note {note} of 0 length, not adding...')
+                            print(f'Found note {note} of 0 length at position {i}, not adding...')
                         break
                     elif events[j] == event:
-                        print(f'Found note {note} without any note_off, not adding...')
+                        print(f'Found note {note} without any note_off at position {i}, not adding...')
                         break
             else:
                 note -= settings.note_dim // 2
@@ -103,5 +112,5 @@ def decode(events, output_name):
 
 
 if __name__ == '__main__':
-    elise = np.load('Music/Beethoven/wordEvents/Bagatella Fur Elise.mid.npy')
-    decode(elise, 'elise.mid')
+    elise = np.load('Music/touhou/wordEvents/sh01_01.mid0.npy')
+    decode(elise, 'touhou.mid')
