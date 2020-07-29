@@ -4,3 +4,15 @@
 .idea/modules.xml
 .idea/misc.xml
 .idea/inspectionProfiles/profiles_settings.xml
+.idea/dictionaries/patrick.xml
+__pycache__/dataset.cpython-37.pyc
+__pycache__/decode2.cpython-37.pyc
+__pycache__/functions.cpython-37.pyc
+__pycache__/self_attention.cpython-37.pyc
+__pycache__/settings.cpython-37.pyc
+/Models/
+/results/
+/Excluded/
+/MissingData/
+/test/
+/Touhou/
