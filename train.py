@@ -84,10 +84,10 @@ val_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='val_accuracy')
 @tf.function(input_signature=train_step_signature)
 def train_step(data):
     inp, target = data
-    look_ahead_mask, dec_padding_mask = create_masks(inp)
+    look_ahead_mask = create_masks(inp)
 
     with tf.GradientTape() as tape:
-        test_pred, _ = model([inp, True, look_ahead_mask])  # , dec_padding_mask])
+        test_pred = model([inp, True, look_ahead_mask])  # , dec_padding_mask])
         test_loss = loss_fn(target, test_pred)
 
     gradients = tape.gradient(test_loss, model.trainable_variables)

@@ -2,7 +2,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import settings
-from self_attention import create_masks
+from self_attention import create_masks # , create_look_ahead_mask
 import time
 
 
@@ -20,6 +20,7 @@ def generate(model, data, length, artist, temperature=1.0, argmax=False, k=None)
 
     try:
         artist_id = settings.artist_offset + settings.dataset_dir.index(artist) + 1
+        print(artist_id)
         artist_id = tf.reshape(artist_id, [1, 1])
     except ValueError:
         print('Artist not found.')
@@ -27,7 +28,7 @@ def generate(model, data, length, artist, temperature=1.0, argmax=False, k=None)
     cur_percent = 1
     total_start = time.time()
     start = time.time()
-    # last_tracked_time = total_start
+    last_tracked_time = total_start
     data = tf.concat([artist_id, data], axis=1)
     for i in range(length):
         if i >= (length / 100) * cur_percent:
@@ -36,30 +37,36 @@ def generate(model, data, length, artist, temperature=1.0, argmax=False, k=None)
             print(f'That took {diff} seconds, ETA: {diff * (100-cur_percent)}')
             cur_percent += 1
             start = time.time()
-        if data.shape[1] > settings.seq_len - 1:
+        shape = data.shape[1]
+        if shape > settings.seq_len - 1:
+            shape = settings.seq_len  # caps it at this value
             data = data[:, -(settings.seq_len - 1):]
             data = tf.concat([artist_id, data], axis=1)
-        look_ahead_mask, dec_mask = create_masks(data)
+            temp_data = data
+        else:
+            paddings = tf.constant([[0, 0], [0, settings.seq_len-shape]])
+            temp_data = tf.pad(data, paddings, "CONSTANT")
+        look_ahead_mask = create_masks(temp_data)
+        # look_ahead_mask = create_look_ahead_mask(len(data))
+        preprocess_time = time.time() - last_tracked_time
+        last_tracked_time += preprocess_time
 
-        # preprocess_time = time.time() - last_tracked_time
-        # last_tracked_time += preprocess_time
-        # print(preprocess_time)
-
-        @tf.function(input_signature=[tf.TensorSpec([1, None], tf.int32),
-                                      tf.TensorSpec([], tf.bool),
-                                      tf.TensorSpec([None, None], tf.float32)])
-        def model_predict(d, train, mask):
-            return model([d, train, mask])  # , dec_mask])
-
-        predictions, weights = model_predict(data, False, look_ahead_mask)
+        # @tf.function(input_signature=[tf.TensorSpec([1, settings.seq_len], tf.int32),
+        #                               tf.TensorSpec([], tf.bool),
+        #                               tf.TensorSpec([1, settings.seq_len, settings.seq_len], tf.float32)])
+        # def model_predict(d, train, mask):
+        #     return model([d, train, mask])  # , dec_mask])
+        #
+        # predictions = model_predict(data, False, look_ahead_mask)
         # predictions, weights = model([data, False, look_ahead_mask])
 
-        # predict_time = time.time() - last_tracked_time
-        # last_tracked_time += predict_time
-        # print(predict_time)
+        predictions = model([temp_data, False, look_ahead_mask])
+
+        predict_time = time.time() - last_tracked_time
+        last_tracked_time += predict_time
 
         # get last element, remove batch dimension
-        predictions = tf.squeeze(predictions[:, -1:, :], axis=0)
+        predictions = tf.squeeze(predictions[:, shape-1:shape, :], axis=0)
         if argmax:
             predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
         else:
@@ -100,9 +107,8 @@ def generate(model, data, length, artist, temperature=1.0, argmax=False, k=None)
         if original_data[-1] == settings.vocab_size - 1:
             print('Found end token!')
             break
-        # done_time = time.time() - last_tracked_time
-        # last_tracked_time += done_time
-        # print(done_time)
+        done_time = time.time() - last_tracked_time
+        last_tracked_time += done_time
     print(f'{cur_percent}% done...')
     return original_data
 

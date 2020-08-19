@@ -1,7 +1,7 @@
 import os
 # dataset_dir = ['Music/Beethoven/combined-word-events', 'Music/Mozart/wordEvents', 'Music/Bach/wordEvents',
 #                'Music/Chopin/wordEvents', 'Music/Haydn/wordEvents']
-dataset_dir = [f.name for f in os.scandir('Music') if f.is_dir()]
+dataset_dir = [f.name for f in os.scandir('MUSIC') if f.is_dir()]
 checkpoint_dir = 'Models/SmAll/256e1024h6l512s2b8h512d0.3dr'
 
 # preprocessing etc.

@@ -181,7 +181,7 @@ def process(file_path):  # needs a file path with / instead of \\.
 if __name__ == '__main__':
     dirs = settings.dataset_dir
     for directory in dirs:
-        files = functions.get_files(f'Music/{directory}/', '.mid')
+        files = functions.get_files(f'Music/{directory}/', '.midi')
         count = 0
         if not path.exists(f'Music/{directory}/wordEvents/'):
             makedirs(f'Music/{directory}/wordEvents/')
