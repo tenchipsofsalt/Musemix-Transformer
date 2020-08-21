@@ -4,6 +4,7 @@ import settings
 
 
 # modified from 'Transformer model for language understanding' https://www.tensorflow.org/tutorials/text/transformer
+# changed from encoder-decoder transformer to decoder-only, combined masks, etc.
 
 # gets angles for positional encoding
 def get_angles(pos, i, d_model):
