@@ -1,15 +1,4 @@
 /Music/
-.idea/vcs.xml
-.idea/Musemix-Transformer.iml
-.idea/modules.xml
-.idea/misc.xml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/dictionaries/patrick.xml
-__pycache__/dataset.cpython-37.pyc
-__pycache__/decode2.cpython-37.pyc
-__pycache__/functions.cpython-37.pyc
-__pycache__/self_attention.cpython-37.pyc
-__pycache__/settings.cpython-37.pyc
 /Models/
 /results/
 /Excluded/
@@ -21,4 +10,10 @@ __pycache__/settings.cpython-37.pyc
 /MAESTRO/
 /seeds/
 *.txt
-__pycache__/preprocess3.cpython-37.pyc
+/.idea/
+/__pycache__/
+artist_embeddings.npy
+embedding distrib.png
+embeddings.npy
+load_test.py
+test.mid
