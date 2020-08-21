@@ -1,10 +1,10 @@
 import functions
-import mido
 import settings
 import numpy as np
 import decode2
 
 
+# Verify your training midi dataset has no errors
 def verify(events):
     cur_vel = 0
     cur_tempo = 0  # change to 0 if you want no default tempo (wait for tempo token)

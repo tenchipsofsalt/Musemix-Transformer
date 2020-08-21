@@ -5,11 +5,14 @@ import functions
 from os import path, makedirs
 
 
+# time conversion into 1/sampling_freq beat steps
 def time2steps(time, bpm):
     return min(max(int(np.round(time * bpm * settings.sampling_freq / 60)), 1), settings.pause_dim)
     # make sure pause is at least 1 and not too long
 
 
+# clip tempo to a certain range, this will always work because my tempo range is large enough s.t. any tempo can be
+# halved/doubled into range
 def clip_tempo(tempo):
     while tempo < settings.min_tempo:
         tempo = tempo * 2
@@ -18,6 +21,7 @@ def clip_tempo(tempo):
     return tempo
 
 
+# put velocities into bins
 def velocity2bin(velocity):
     # values from: http://nickleusmusic.blogspot.com/2013/07/midi-dynamics-note-velocity-values-for.html
     if velocity < 32:
@@ -34,10 +38,12 @@ def velocity2bin(velocity):
         return 6
 
 
+# put tempos into bins
 def tempo2bin(tempo):
     return 1 + (tempo - settings.min_tempo) // settings.tempo_step
 
 
+# shift notes up or down by a certain amount
 def note_shift(events, shift):
     for i in range(len(events)):
         event = events[i]
@@ -49,6 +55,7 @@ def note_shift(events, shift):
     return events
 
 
+# process file and save to ./wordEvents/
 def process(file_path):  # needs a file path with / instead of \\.
     filename = file_path.split('/')[-1]
     if path.exists(file_path.rsplit('/', 1)[0] + f'/wordEvents/{filename}.npy'):
@@ -179,6 +186,7 @@ def process(file_path):  # needs a file path with / instead of \\.
 
 
 if __name__ == '__main__':
+    # preprocess all files under Music/
     dirs = settings.dataset_dir
     for directory in dirs:
         files = functions.get_files(f'Music/{directory}/', '.midi')

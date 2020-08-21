@@ -3,6 +3,7 @@ import random
 import settings
 import numpy as np
 
+# generates seeds, pretty self explanatory.
 dirs = settings.dataset_dir
 count = settings.artist_offset
 for directory in dirs:

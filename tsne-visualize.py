@@ -1,6 +1,5 @@
 import functions
 from self_attention import *
-import decode2
 import numpy as np
 from sklearn.manifold import TSNE
 import time
@@ -23,7 +22,7 @@ if ckpt_manager.latest_checkpoint:
     print('Latest checkpoint restored.')
 
 # run some data through to init
-starter = functions.generate(model, np.load('Music/Beethoven/wordEvents/elise.mid.npy')[:100], 10, 'Beethoven', temperature=1.0)
+starter = functions.generate(model, np.load('Music/Beethoven/wordEvents/elise.mid.npy')[:100], 10, 'Beethoven')
 
 artist_embeddings = model.layers[0].embedding.get_weights()[0][324:]
 

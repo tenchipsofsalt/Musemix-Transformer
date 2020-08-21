@@ -15,11 +15,12 @@ def loss_fn(labels, logits):
     loss_value = tf.reduce_sum(loss_value)/tf.reduce_sum(mask)
 
     # could've done this with a python function, ig I'm dumb
+    # testing out increasing loss based on repeated notes, don't think this is a good way to do it
     # scalar = 1.5
     # max_look_back = 48
     # last_logits = tf.transpose(logits, perm=(1, 0, 2))[-1]
     # predictions = tf.map_fn(elems=last_logits, fn=lambda t: tf.cast(tf.math.argmax(t, 0), tf.int32), dtype=tf.int32)
-    # look_back = 0-tf.math.minimum(tf.shape(labels)[-1], max_look_back)  # look back n elements or less if does not exist
+    # look_back = 0-tf.math.minimum(tf.shape(labels)[-1], max_look_back)  # look back n elems or less if does not exist
     # transposed_actual = tf.cast(tf.transpose(labels, perm=(1, 0))[look_back:-1], tf.int32)
     # matches = tf.map_fn(elems=transposed_actual,
     #                     fn=lambda t:
@@ -61,7 +62,7 @@ model = Transformer(num_layers=num_layers,
                     num_heads=num_heads,
                     dff=dense_units,
                     vocab_size=vocab_size,
-                    pe_input=seq_len)  # might have to be longer?
+                    pe_input=seq_len)
 learning_rate = CustomSchedule(embed_dim)
 optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
@@ -134,5 +135,3 @@ for epoch in range(epochs):
     print('Epoch {} (Val) Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1, val_loss.result(), val_accuracy.result()))
 
     print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
-    # tf.saved_model.save(model, 'Models/All/test')
-    # model.summary()

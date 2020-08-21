@@ -3,10 +3,13 @@ import settings
 import numpy as np
 
 
+# converts steps to ticks at a certain BPM
 def steps2ticks(steps, bpm):
-    return int(mido.second2tick(steps * 60 / (settings.sampling_freq * bpm), settings.ticks_per_beat, mido.bpm2tempo(bpm)))
+    return int(mido.second2tick(steps * 60 / (settings.sampling_freq * bpm), settings.ticks_per_beat,
+                                mido.bpm2tempo(bpm)))
 
 
+# velocity bin to velocity
 def bin2vel(v_bin):
     if v_bin == 1:
         return 55
@@ -22,10 +25,12 @@ def bin2vel(v_bin):
         return 105
 
 
+# decode numerical events and output midi
 def decode(events, output_name, touhou=False):
     mid = mido.MidiFile(ticks_per_beat=settings.ticks_per_beat)
     track = mido.MidiTrack()
     mid.tracks.append(track)
+    # just some header stuff for fun
     if touhou:
         track.append(mido.Message('control_change', control=0, value=0, time=0))
         track.append(mido.Message('control_change', control=32, value=0, time=0))
@@ -92,7 +97,6 @@ def decode(events, output_name, touhou=False):
                 cur_pause = 0
             elif value == 4:
                 track.append(mido.MetaMessage('end_of_track', time=cur_pause))
-                cur_pause = 0
                 break
             elif value == 1 and not pedal:
                 if cur_tempo == 0:

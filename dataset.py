@@ -8,6 +8,7 @@ import settings
 import preprocess3
 
 
+# didn't really implement this fully, maybe consider in future with a generate function as well
 class SongData:
     def __init__(self, file):
         self.events = np.load(file)
@@ -16,6 +17,10 @@ class SongData:
         decode2.decode(self.events, output_name)
 
 
+# data pipeline
+# __getitem__, or indexing will return a randomly shifted sequence from the corresponding data point,
+# with artist id first
+# get_data basically repeats that for a whole part of the data (train, val, or test)
 class DataSequence(tf.keras.utils.Sequence):
     def __init__(self, dir_names, batch_size, seq_len, train=settings.train_split, val=settings.val_split):
         self.files = []
@@ -29,8 +34,8 @@ class DataSequence(tf.keras.utils.Sequence):
         random.shuffle(self.files)
         self.file_dict = {
             'train': self.files[:int(len(self.files) * train)],
-            'val': self.files[int(len(self.files) * train):int(len(self.files) * (train+val))],
-            'test': self.files[int(len(self.files) * (train+val)):],
+            'val': self.files[int(len(self.files) * train):int(len(self.files) * (train + val))],
+            'test': self.files[int(len(self.files) * (train + val)):],
         }
         self.batch_size = batch_size
         self.seq_len = seq_len
@@ -64,13 +69,14 @@ class DataSequence(tf.keras.utils.Sequence):
                tf.convert_to_tensor([np.delete(seq, 1) for seq in seqs])
 
 
+# also not really implemented, takes too much memory to return everything
 class Dataset:
     def __init__(self, dir_path, train=settings.train_split, val=settings.val_split):
         self.files = functions.get_files(dir_path, '.npy')
         self.file_dict = {
             'train': self.files[:int(len(self.files) * train)],
-            'val': self.files[int(len(self.files) * train):int(len(self.files) * (train+val))],
-            'test': self.files[int(len(self.files) * (train+val)):],
+            'val': self.files[int(len(self.files) * train):int(len(self.files) * (train + val))],
+            'test': self.files[int(len(self.files) * (train + val)):],
         }
 
     def get_batch(self, batch_size, seq_len, batch_type='train'):
@@ -90,11 +96,13 @@ class Dataset:
         return train_x, train_y, val_x, val_y, test_x, test_y
 
 
+# Gets a random sequence from a file.
 def _get_seq(file, seq_len):
     data = np.load(file[0])
     data_length = len(data)
     if seq_len > data_length:
-        # I don't think padding is a good solution.... or not
+        # Should be a zero-padding thing here. I didn't use it because almost all of my data was long enough for my
+        # sequence length, which was limited by my computer's specs. I just cut out the few files that were too short.
         return None
     else:
         start = random.randrange(0, data_length - seq_len + 1)
@@ -103,6 +111,8 @@ def _get_seq(file, seq_len):
     return seq
 
 
+# Gets ALL possible sequences of a certain length from file dict, which usually makes OOM errors.
+# By all I mean 1-512, 2-513, 3-514 etc.
 def get_all_of_type(file_dict, batch_type, seq_len, step=1, batch_size=1):
     x = []
     y = []
@@ -110,7 +120,7 @@ def get_all_of_type(file_dict, batch_type, seq_len, step=1, batch_size=1):
         cur_data = np.load(file)
         while len(cur_data) > seq_len + 1:
             x.append(cur_data[:seq_len])
-            y.append(cur_data[1:seq_len+1])  # if seq2seq, use [1:seq_len+1]
+            y.append(cur_data[1:seq_len + 1])  # if seq2seq, use [1:seq_len+1]
             cur_data = np.delete(cur_data, range(step))
     while len(x) % batch_size != 0:  # for validation, this needs to be a multiple of batch_size pepeHands
         x.pop()
@@ -118,4 +128,3 @@ def get_all_of_type(file_dict, batch_type, seq_len, step=1, batch_size=1):
     x, y = tf.convert_to_tensor(x), tf.convert_to_tensor(y)
     print(f'{batch_type} data: {len(x)} elements of shape {x.shape}.')
     return x, y
-
