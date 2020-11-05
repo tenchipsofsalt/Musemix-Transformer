@@ -22,9 +22,9 @@ class SongData:
 # with artist id first
 # get_data basically repeats that for a whole part of the data (train, val, or test)
 class DataSequence(tf.keras.utils.Sequence):
-    def __init__(self, dir_names, batch_size, seq_len, train=settings.train_split, val=settings.val_split):
+    def __init__(self, dir_names, batch_size, seq_len, train=settings.train_split, val=settings.val_split, use_artist=True):
         self.files = []
-
+        self.use_artist = use_artist
         # artists
         count = 0
         for dir_name in dir_names:
@@ -54,19 +54,26 @@ class DataSequence(tf.keras.utils.Sequence):
         batch = self.file_dict[source][idx * self.batch_size:(idx + 1) * self.batch_size]
         seqs = []
         for file in batch:
-            seqs.append(preprocess3.note_shift(_get_seq(file, self.seq_len + 1), random.choice(settings.shifts)))
-        return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 1) for seq in seqs]
+            seqs.append(preprocess3.note_shift(_get_seq(file, self.seq_len, self.use_artist), random.choice(settings.shifts)))
+        if self.use_artist:
+            return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 1) for seq in seqs]
+        else:
+            return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 0) for seq in seqs]
 
     def get_data(self, source):
         files = self.file_dict[source]
         seqs = []
         for file in files:
-            seqs.append(_get_seq(file, self.seq_len + 1))
+            seqs.append(_get_seq(file, self.seq_len, self.use_artist))
         while len(seqs) % self.batch_size != 0:
             seqs.pop()
         print(f'{source} data has length {len(seqs)}')
-        return tf.convert_to_tensor([np.delete(seq, -1) for seq in seqs]), \
-               tf.convert_to_tensor([np.delete(seq, 1) for seq in seqs])
+        if self.use_artist:
+            return tf.convert_to_tensor([np.delete(seq, -1) for seq in seqs]), \
+                   tf.convert_to_tensor([np.delete(seq, 1) for seq in seqs])
+        else:
+            return tf.convert_to_tensor([np.delete(seq, -1) for seq in seqs]), \
+                   tf.convert_to_tensor([np.delete(seq, 0) for seq in seqs])
 
 
 # also not really implemented, takes too much memory to return everything
@@ -97,7 +104,7 @@ class Dataset:
 
 
 # Gets a random sequence from a file.
-def _get_seq(file, seq_len):
+def _get_seq(file, seq_len, artist=True):
     data = np.load(file[0])
     data_length = len(data)
     if seq_len > data_length:
@@ -105,9 +112,13 @@ def _get_seq(file, seq_len):
         # sequence length, which was limited by my computer's specs. I just cut out the few files that were too short.
         return None
     else:
-        start = random.randrange(0, data_length - seq_len + 1)
-        seq = data[start:start + seq_len - 1]
-    seq = np.append([file[1] + settings.artist_offset], seq)
+        if artist:
+            start = random.randrange(0, data_length - seq_len)
+            seq = data[start:start + seq_len]
+            seq = np.append([file[1] + settings.artist_offset], seq)
+        else:
+            start = random.randrange(0, data_length - seq_len - 1)
+            seq = data[start:start + seq_len + 1]
     return seq
 
 

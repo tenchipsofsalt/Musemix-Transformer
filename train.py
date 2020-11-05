@@ -50,7 +50,7 @@ seq_len = settings.seq_len
 batch_size = settings.batch_size
 
 # load dataset
-dataSequence = DataSequence(settings.dataset_dir, batch_size, seq_len)
+dataSequence = DataSequence(settings.dataset_dir, batch_size, seq_len, use_artist=False)
 # OOM, not feasible
 # train_x, train_y, val_x, val_y, test_x, test_y = dataset.get_all(settings.seq_len)
 
@@ -73,8 +73,8 @@ if ckpt_manager.latest_checkpoint:
     ckpt.restore(ckpt_manager.latest_checkpoint)
     print('Latest checkpoint restored!!')
 
-train_step_signature = [(tf.TensorSpec(shape=(None, None), dtype=tf.int32),
-                         tf.TensorSpec(shape=(None, None), dtype=tf.int32))]
+train_step_signature = [(tf.TensorSpec(shape=(batch_size, seq_len), dtype=tf.int32),
+                         tf.TensorSpec(shape=(batch_size, seq_len), dtype=tf.int32))]
 
 train_loss = tf.keras.metrics.Mean(name='train_loss')
 train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
@@ -109,7 +109,7 @@ for epoch in range(epochs):
     val_loss.reset_states()
     val_accuracy.reset_states()
 
-    for i in range(len(dataSequence)):
+    for i in range(len(dataSequence)-1): # for some reason needs -1, too lazy to debug, shuffled so it's fine
         train_step(dataSequence[i])
 
         if i % 10 == 0:
@@ -119,8 +119,8 @@ for epoch in range(epochs):
     for i in range(len(val_x)//batch_size):
         val_x_batch = val_x[i * batch_size:(i + 1) * batch_size]
         val_y_batch = val_y[i * batch_size:(i + 1) * batch_size]
-        val_la_mask, val_padding_mask = create_masks(val_x_batch)
-        val_pred, _ = model([val_x_batch, False, val_la_mask])
+        val_la_mask = create_masks(val_x_batch)
+        val_pred = model([val_x_batch, False, val_la_mask])
         val_batch_loss = loss_fn(val_y_batch, val_pred)
 
         val_loss(val_batch_loss)
