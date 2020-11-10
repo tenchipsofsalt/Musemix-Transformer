@@ -1,7 +1,7 @@
 import os
 
-dataset_dir = [f.name for f in os.scandir('MUSIC') if f.is_dir()]
-checkpoint_dir = ''
+dataset_dir = [f.name for f in os.scandir('Music') if f.is_dir()]
+checkpoint_dir = 'Models/SmAll/256e1024h6l512s2b8h512d0.3drno_artist/'
 
 # preprocessing etc.
 sampling_freq = 12  # ticks per beat

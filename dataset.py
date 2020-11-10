@@ -5,7 +5,7 @@ import random
 import tensorflow as tf
 import math
 import settings
-import preprocess3
+import preprocess
 
 
 # didn't really implement this fully, maybe consider in future with a generate function as well
@@ -54,7 +54,7 @@ class DataSequence(tf.keras.utils.Sequence):
         batch = self.file_dict[source][idx * self.batch_size:(idx + 1) * self.batch_size]
         seqs = []
         for file in batch:
-            seqs.append(preprocess3.note_shift(_get_seq(file, self.seq_len, self.use_artist), random.choice(settings.shifts)))
+            seqs.append(preprocess.note_shift(_get_seq(file, self.seq_len, self.use_artist), random.choice(settings.shifts)))
         if self.use_artist:
             return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 1) for seq in seqs]
         else:
