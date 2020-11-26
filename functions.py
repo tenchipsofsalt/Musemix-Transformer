@@ -17,22 +17,22 @@ def get_files(dir_path, extension):
 
 # generate given a data sequence, length, artist etc. Supports argmax (always picking most likely element) and top-k
 # (picking from top k most likely elements) Artist must be in settings.dataset_dir
-def generate(model, data, length, artist, temperature=1.0, argmax=False, k=None):
+def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=None):
     original_data = np.array(data)
     data = tf.expand_dims(data, 0)
-
-    try:
-        artist_id = settings.artist_offset + settings.dataset_dir.index(artist) + 1
-        print(artist_id)
-        artist_id = tf.reshape(artist_id, [1, 1])
-    except ValueError:
-        print('Artist not found.')
-        return
+    if artist is not None:
+        try:
+            artist_id = settings.artist_offset + settings.dataset_dir.index(artist) + 1
+            print(artist_id)
+            artist_id = tf.reshape(artist_id, [1, 1])
+        except ValueError:
+            print('Artist not found.')
+            return
+        data = tf.concat([artist_id, data], 1)
     cur_percent = 1
     # total_start = time.time()
     start = time.time()
     # last_tracked_time = total_start
-    data = tf.concat([artist_id, data], axis=1)
     for i in range(length):
         # this doesn't work for sequences under 100, too lazy to fix atm... it's just a slight ETA problem.
         if i >= (length / 100) * cur_percent:
@@ -45,7 +45,8 @@ def generate(model, data, length, artist, temperature=1.0, argmax=False, k=None)
         if shape > settings.seq_len - 1:
             shape = settings.seq_len  # caps it at this value
             data = data[:, -(settings.seq_len - 1):]
-            data = tf.concat([artist_id, data], axis=1)
+            if artist is not None:
+                data = tf.concat([artist_id, data], 1)
             temp_data = data
         else:
             paddings = tf.constant([[0, 0], [0, settings.seq_len-shape]])
@@ -98,7 +99,7 @@ def generate(model, data, length, artist, temperature=1.0, argmax=False, k=None)
             else:
                 predicted_id = tf.cast(tf.random.categorical(predictions, num_samples=1)[-1, 0].numpy(), tf.int32)
         # add to input data
-        data = tf.concat([data, tf.expand_dims(tf.expand_dims(predicted_id, axis=0), axis=0)], axis=-1)
+        data = tf.concat([data, tf.expand_dims(tf.expand_dims(predicted_id, axis=0), axis=0)], -1)
         # reduce length of input data if too long
         original_data = np.append(original_data, predicted_id.numpy())
         if original_data[-1] == settings.vocab_size - 1:

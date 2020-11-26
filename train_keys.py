@@ -1,11 +1,12 @@
 import time
-from dataset import *
+from dataset_keys import *
 from self_attention import create_masks, Transformer, CustomSchedule
 import os
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-
+if not os.path.exists(settings_keys.checkpoint_dir):
+    os.makedirs(settings_keys.checkpoint_dir)
 
 def loss_fn(labels, logits):
     mask = tf.math.logical_not(tf.math.equal(labels, 0))
@@ -25,8 +26,8 @@ def loss_fn(labels, logits):
     # matches = tf.map_fn(elems=transposed_actual,
     #                     fn=lambda t:
     #                     tf.where(tf.logical_and(tf.logical_and(tf.equal(t, predictions),
-    #                                                            tf.less_equal(predictions, settings.pause_offset)),
-    #                                             tf.greater(predictions, settings.note_offset)), scalar, 1),
+    #                                                            tf.less_equal(predictions, settings_keys.pause_offset)),
+    #                                             tf.greater(predictions, settings_keys.note_offset)), scalar, 1),
     #                     dtype=tf.float32)
     # penalty = tf.reduce_mean(tf.reduce_prod(matches, axis=0))
     return loss_value  # * penalty
@@ -38,21 +39,21 @@ def loss_fn(labels, logits):
 # num_hid = number of hidden units
 # num_layers = number of LSTM layers
 # pass in [batch_size, seq_len]
-vocab_size = settings.vocab_size
-embed_dim = settings.embed_dim
-num_hid = settings.num_hid
-num_layers = settings.num_layers
-checkpoint_dir = settings.checkpoint_dir
-num_heads = settings.num_heads
-dense_units = settings.dense_layer_units
-epochs = settings.epochs
-seq_len = settings.seq_len
-batch_size = settings.batch_size
+vocab_size = settings_keys.vocab_size
+embed_dim = settings_keys.embed_dim
+num_hid = settings_keys.num_hid
+num_layers = settings_keys.num_layers
+checkpoint_dir = settings_keys.checkpoint_dir
+num_heads = settings_keys.num_heads
+dense_units = settings_keys.dense_layer_units
+epochs = settings_keys.epochs
+seq_len = settings_keys.seq_len
+batch_size = settings_keys.batch_size
 
 # load dataset
-dataSequence = DataSequence(settings.dataset_dir, batch_size, seq_len, use_artist=False)
+dataSequence = DataSequence(settings_keys.dataset_dir, batch_size, seq_len, use_artist=False)
 # OOM, not feasible
-# train_x, train_y, val_x, val_y, test_x, test_y = dataset.get_all(settings.seq_len)
+# train_x, train_y, val_x, val_y, test_x, test_y = dataset.get_all(settings_keys.seq_len)
 
 val_x, val_y = dataSequence.get_data('val')
 test_x, test_y = dataSequence.get_data('test')
@@ -99,7 +100,7 @@ def train_step(data):
 
 
 print('Starting training...')
-print(f'Test data has {batch_size * len(dataSequence)} elements, from {len(settings.dataset_dir)} sources.')
+print(f'Test data has {batch_size * len(dataSequence)} elements, from {len(settings_keys.dataset_dir)} sources.')
 
 for epoch in range(epochs):
     start = time.time()
@@ -128,13 +129,16 @@ for epoch in range(epochs):
 
     if (epoch + 1) % 5 == 0:
         ckpt_save_path = ckpt_manager.save()
-        print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
-                                                            ckpt_save_path))
+        print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
+        cont = input("Continue? ")
+        if cont == "n":
+            break
+                                                    
 
     print('Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1, train_loss.result(), train_accuracy.result()))
     print('Epoch {} (Val) Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1, val_loss.result(), val_accuracy.result()))
-    f = open("log.txt", "a")
+    f = open(checkpoint_dir + "log.txt", "a")
     # epoch, loss, accuracy, val loss, val acc
-    f.write(f"{epoch + 1}, {train_loss.result()}, {train_accuracy.result()}, {val_loss.result()}, {val_accuracy.result()}")
+    f.write(f"{epoch + 1}, {train_loss.result()}, {train_accuracy.result()}, {val_loss.result()}, {val_accuracy.result()}\n")
     f.close()
     print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))

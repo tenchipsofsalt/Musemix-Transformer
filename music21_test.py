@@ -1,4 +1,5 @@
 from music21 import *
 
-s = corpus.parse('bach/bwv65.2.xml')
+s = converter.parse('Music/Bach/01 Menuet.mid')
 s.analyze('key')
+
