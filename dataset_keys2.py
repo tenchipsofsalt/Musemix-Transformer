@@ -1,11 +1,11 @@
 import numpy as np
-import decode
+import decode_keys2
 import functions
 import random
 import tensorflow as tf
 import math
-import settings
-import preprocess
+import settings_keys2
+import preprocess_keys2
 
 
 # didn't really implement this fully, maybe consider in future with a generate function as well
@@ -14,7 +14,7 @@ class SongData:
         self.events = np.load(file)
 
     def decode(self, output_name):
-        decode.decode(self.events, output_name)
+        decode_keys2.decode(self.events, output_name)
 
 
 # data pipeline
@@ -22,7 +22,7 @@ class SongData:
 # with artist id first
 # get_data basically repeats that for a whole part of the data (train, val, or test)
 class DataSequence(tf.keras.utils.Sequence):
-    def __init__(self, dir_names, batch_size, seq_len, train=settings.train_split, val=settings.val_split, use_artist=True):
+    def __init__(self, dir_names, batch_size, seq_len, train=settings_keys2.train_split, val=settings_keys2.val_split, use_artist=True):
         self.files = []
         self.use_artist = use_artist
         # artists
@@ -42,7 +42,7 @@ class DataSequence(tf.keras.utils.Sequence):
 
         # check all files are long enough
         for file in self.files:
-            if len(np.load(file[0])) <= seq_len:
+            if len(np.load(file[0])) <= seq_len + 3:
                 print(f'File {file} is too short. Please remove and try again.')
 
     def __len__(self):
@@ -54,11 +54,11 @@ class DataSequence(tf.keras.utils.Sequence):
         batch = self.file_dict[source][idx * self.batch_size:(idx + 1) * self.batch_size]
         seqs = []
         for file in batch:
-            seqs.append(note_shift(_get_seq(file, self.seq_len, self.use_artist), random.choice(settings.shifts)))
+            seqs.append(_get_seq(file, self.seq_len, self.use_artist))
         if self.use_artist:
-            return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 1) for seq in seqs]
+            return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 2) for seq in seqs]
         else:
-            return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 0) for seq in seqs]
+            return [np.delete(seq, -1) for seq in seqs], [np.delete(seq, 1) for seq in seqs]
 
     def get_data(self, source):
         files = self.file_dict[source]
@@ -70,15 +70,15 @@ class DataSequence(tf.keras.utils.Sequence):
         print(f'{source} data has length {len(seqs)}')
         if self.use_artist:
             return tf.convert_to_tensor([np.delete(seq, -1) for seq in seqs]), \
-                   tf.convert_to_tensor([np.delete(seq, 1) for seq in seqs])
+                   tf.convert_to_tensor([np.delete(seq, 2) for seq in seqs])
         else:
             return tf.convert_to_tensor([np.delete(seq, -1) for seq in seqs]), \
-                   tf.convert_to_tensor([np.delete(seq, 0) for seq in seqs])
+                   tf.convert_to_tensor([np.delete(seq, 1) for seq in seqs])
 
 
 # also not really implemented, takes too much memory to return everything
 class Dataset:
-    def __init__(self, dir_path, train=settings.train_split, val=settings.val_split):
+    def __init__(self, dir_path, train=settings_keys2.train_split, val=settings_keys2.val_split):
         self.files = functions.get_files(dir_path, '.npy')
         self.file_dict = {
             'train': self.files[:int(len(self.files) * train)],
@@ -107,18 +107,20 @@ class Dataset:
 def _get_seq(file, seq_len, artist=True):
     data = np.load(file[0])
     data_length = len(data)
+    # 1 for key means seq_len should be at least data_length + 1
     if seq_len > data_length:
         # Should be a zero-padding thing here. I didn't use it because almost all of my data was long enough for my
         # sequence length, which was limited by my computer's specs. I just cut out the few files that were too short.
         return None
     else:
         if artist:
-            start = random.randrange(0, data_length - seq_len)
-            seq = data[start:start + seq_len]
-            seq = np.append([file[1] + settings.artist_offset], seq)
+            start = random.randrange(1, data_length - seq_len + 1)
+            seq = data[start:start + seq_len - 1]
+            seq = np.append([data[0], file[1] + settings_keys2.artist_offset], seq)
         else:
-            start = random.randrange(0, data_length - seq_len - 1)
-            seq = data[start:start + seq_len + 1]
+            start = random.randrange(1, data_length - seq_len)
+            seq = data[start:start + seq_len]
+            seq = np.append([data[0]], seq)
     return seq
 
 
@@ -139,18 +141,3 @@ def get_all_of_type(file_dict, batch_type, seq_len, step=1, batch_size=1):
     x, y = tf.convert_to_tensor(x), tf.convert_to_tensor(y)
     print(f'{batch_type} data: {len(x)} elements of shape {x.shape}.')
     return x, y
-
-# shift notes up or down by a certain amount
-def note_shift(events, shift):
-    for i in range(len(events)):
-        event = events[i]
-        if settings.note_offset < event <= settings.pause_offset:
-            key = (event - settings.note_offset - 1) // 128
-            note = (event - settings.note_offset - 1) % 128
-            note += shift
-            if note < 0:
-                note = 0
-            elif note > 127:
-                note = 127
-            events[i] = settings.note_offset + 1 + key * 128 + note
-    return events

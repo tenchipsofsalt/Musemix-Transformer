@@ -1,12 +1,12 @@
 import time
-from dataset_keys import *
-from self_attention import create_masks, Transformer, CustomSchedule
+from dataset_keys2 import *
+from self_attention_keys2 import create_masks, Transformer, CustomSchedule
 import os
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-if not os.path.exists(settings_keys.checkpoint_dir):
-    os.makedirs(settings_keys.checkpoint_dir)
+if not os.path.exists(settings_keys2.checkpoint_dir):
+    os.makedirs(settings_keys2.checkpoint_dir)
 
 def loss_fn(labels, logits):
     mask = tf.math.logical_not(tf.math.equal(labels, 0))
@@ -26,8 +26,8 @@ def loss_fn(labels, logits):
     # matches = tf.map_fn(elems=transposed_actual,
     #                     fn=lambda t:
     #                     tf.where(tf.logical_and(tf.logical_and(tf.equal(t, predictions),
-    #                                                            tf.less_equal(predictions, settings_keys.pause_offset)),
-    #                                             tf.greater(predictions, settings_keys.note_offset)), scalar, 1),
+    #                                                            tf.less_equal(predictions, settings_keys2.pause_offset)),
+    #                                             tf.greater(predictions, settings_keys2.note_offset)), scalar, 1),
     #                     dtype=tf.float32)
     # penalty = tf.reduce_mean(tf.reduce_prod(matches, axis=0))
     return loss_value  # * penalty
@@ -39,21 +39,21 @@ def loss_fn(labels, logits):
 # num_hid = number of hidden units
 # num_layers = number of LSTM layers
 # pass in [batch_size, seq_len]
-vocab_size = settings_keys.vocab_size
-embed_dim = settings_keys.embed_dim
-num_hid = settings_keys.num_hid
-num_layers = settings_keys.num_layers
-checkpoint_dir = settings_keys.checkpoint_dir
-num_heads = settings_keys.num_heads
-dense_units = settings_keys.dense_layer_units
-epochs = settings_keys.epochs
-seq_len = settings_keys.seq_len
-batch_size = settings_keys.batch_size
+vocab_size = settings_keys2.vocab_size
+embed_dim = settings_keys2.embed_dim
+num_hid = settings_keys2.num_hid
+num_layers = settings_keys2.num_layers
+checkpoint_dir = settings_keys2.checkpoint_dir
+num_heads = settings_keys2.num_heads
+dense_units = settings_keys2.dense_layer_units
+epochs = settings_keys2.epochs
+seq_len = settings_keys2.seq_len
+batch_size = settings_keys2.batch_size
 
 # load dataset
-dataSequence = DataSequence(settings_keys.dataset_dir, batch_size, seq_len)
+dataSequence = DataSequence(settings_keys2.dataset_dir, batch_size, seq_len)
 # OOM, not feasible
-# train_x, train_y, val_x, val_y, test_x, test_y = dataset.get_all(settings_keys.seq_len)
+# train_x, train_y, val_x, val_y, test_x, test_y = dataset.get_all(settings_keys2.seq_len)
 
 val_x, val_y = dataSequence.get_data('val')
 test_x, test_y = dataSequence.get_data('test')
@@ -100,7 +100,7 @@ def train_step(data):
 
 
 print('Starting training...')
-print(f'Test data has {batch_size * len(dataSequence)} elements, from {len(settings_keys.dataset_dir)} sources.')
+print(f'Test data has {batch_size * len(dataSequence)} elements, from {len(settings_keys2.dataset_dir)} sources.')
 
 for epoch in range(epochs):
     start = time.time()

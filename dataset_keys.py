@@ -1,5 +1,5 @@
 import numpy as np
-import decode2
+import decode
 import functions
 import random
 import tensorflow as tf
@@ -14,7 +14,7 @@ class SongData:
         self.events = np.load(file)
 
     def decode(self, output_name):
-        decode2.decode(self.events, output_name)
+        decode.decode(self.events, output_name)
 
 
 # data pipeline

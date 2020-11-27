@@ -1,7 +1,7 @@
 import functions
 import settings
 import numpy as np
-import decode2
+import decode
 
 
 # Verify your training midi dataset has no errors
@@ -16,7 +16,7 @@ def verify(events):
     for i in range(event_count):
         event = events[i]
         if event <= settings.tempo_offset:
-            cur_vel = decode2.bin2vel(event)
+            cur_vel = decode.bin2vel(event)
         elif event <= settings.note_offset:
             cur_tempo = (event - settings.tempo_offset - 1) * settings.tempo_step + settings.min_tempo
             cur_pause = 0
@@ -49,7 +49,7 @@ def verify(events):
             if cur_tempo == 0:
                 print('[E] No tempo found, continuing...')
                 continue
-            cur_pause += decode2.steps2ticks(event - settings.pause_offset, cur_tempo)
+            cur_pause += decode.steps2ticks(event - settings.pause_offset, cur_tempo)
         else:
             value = event - settings.pedal_offset
             if value == 3:

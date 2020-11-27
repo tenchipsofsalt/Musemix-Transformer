@@ -5,6 +5,8 @@ import os
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+if not os.path.exists(settings.checkpoint_dir):
+    os.makedirs(settings.checkpoint_dir)
 
 
 def loss_fn(labels, logits):
@@ -50,7 +52,7 @@ seq_len = settings.seq_len
 batch_size = settings.batch_size
 
 # load dataset
-dataSequence = DataSequence(settings.dataset_dir, batch_size, seq_len, use_artist=False)
+dataSequence = DataSequence(settings.dataset_dir, batch_size, seq_len, use_artist=True)
 # OOM, not feasible
 # train_x, train_y, val_x, val_y, test_x, test_y = dataset.get_all(settings.seq_len)
 
@@ -128,13 +130,12 @@ for epoch in range(epochs):
 
     if (epoch + 1) % 5 == 0:
         ckpt_save_path = ckpt_manager.save()
-        print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
-                                                            ckpt_save_path))
+        print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
 
     print('Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1, train_loss.result(), train_accuracy.result()))
     print('Epoch {} (Val) Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1, val_loss.result(), val_accuracy.result()))
-    f = open("log.txt", "a")
+    f = open(checkpoint_dir + "log.txt", "a")
     # epoch, loss, accuracy, val loss, val acc
-    f.write(f"{epoch + 1}, {train_loss.result()}, {train_accuracy.result()}, {val_loss.result()}, {val_accuracy.result()}")
+    f.write(f"{epoch + 1}, {train_loss.result()}, {train_accuracy.result()}, {val_loss.result()}, {val_accuracy.result()}\n")
     f.close()
     print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))

@@ -1,7 +1,7 @@
 import os
 
 dataset_dir = [f.name for f in os.scandir('Music') if f.is_dir()]
-checkpoint_dir = 'Models/SmAller/128e512h6l512s2b8h256d0.3dr/'
+checkpoint_dir = 'Models/keyed2/128e512h6l512s2b8h256d0.3dr/'
 
 # preprocessing etc.
 sampling_freq = 12  # ticks per beat
@@ -11,9 +11,12 @@ min_tempo = 40
 max_tempo = 200
 tempo_step = 20
 tempo_dim = (max_tempo-min_tempo) // tempo_step + 1
-note_dim = 128 * 2
+# C1 to C9, can shift to B1 to B9 (basically 9 octaves inclusive)
+note_range = 109
+note_dim = note_range * 2
 artist_dim = len(dataset_dir)
-vocab_size = velocity_dim + tempo_dim + note_dim + pause_dim + 4 + artist_dim + 1  # 4 = start, end, pedal on, pedal off
+key_dim = 12 * 2
+vocab_size = velocity_dim + tempo_dim + note_dim + pause_dim + 4 + artist_dim + key_dim + 1  # 4 = start, end, pedal on, pedal off
 ticks_per_beat = 240
 shifts = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
 
@@ -24,6 +27,7 @@ note_offset = tempo_offset + tempo_dim
 pause_offset = note_offset + note_dim
 pedal_offset = pause_offset + pause_dim
 artist_offset = pedal_offset + 4
+key_offset = artist_offset + artist_dim
 
 # training
 embed_dim = 128
