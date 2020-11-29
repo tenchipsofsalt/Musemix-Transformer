@@ -1,6 +1,6 @@
 import functions
 from self_attention import *
-import decode2
+import decode
 import numpy as np
 
 # define architecture
@@ -29,6 +29,6 @@ touhou = False
 
 # generate
 print("Generating w/ starter...")
-starter = functions.generate(model, np.load('Music/Albéniz/wordEvents/Aragon (Fantasia) Op.47 part 6.mid.npy')[:100], 3000)
-decode2.decode(starter, 'starter test.mid', touhou=touhou)
+starter = functions.generate(model, np.load('Music/Albéniz/wordEvents/Aragon (Fantasia) Op.47 part 6.mid.npy')[:100], 200)
+decode.decode(starter, 'starter test.mid', touhou=touhou)
 # model.save('INSERT PATH HERE')

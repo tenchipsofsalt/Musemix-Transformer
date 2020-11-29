@@ -205,7 +205,7 @@ def process(file_path):  # needs a file path with / instead of \\.
                 continue
             try:
                 cur_notes.remove(value)
-                events.append(value + settings_keys2.note_dim // 2)  # append note off
+                events.append(value + settings_keys2.note_range)  # append note off
             except ValueError:
                 # print(f"Note {message.note + 1} was not appended because there was no onset.")
                 pass

@@ -42,11 +42,13 @@ def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=
             cur_percent += 1
             start = time.time()
         shape = data.shape[1]
-        if shape > settings.seq_len - 1:
+        if shape >= settings.seq_len:
             shape = settings.seq_len  # caps it at this value
-            data = data[:, -(settings.seq_len - 1):]
             if artist is not None:
+                data = data[:, -(settings.seq_len - 1):]
                 data = tf.concat([artist_id, data], 1)
+            else:
+                data = data[:, -(settings.seq_len):]
             temp_data = data
         else:
             paddings = tf.constant([[0, 0], [0, settings.seq_len-shape]])
@@ -98,13 +100,14 @@ def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=
             # everything
             else:
                 predicted_id = tf.cast(tf.random.categorical(predictions, num_samples=1)[-1, 0].numpy(), tf.int32)
+            predicted_id = tf.expand_dims(predicted_id, axis=0)
         # add to input data
-        data = tf.concat([data, tf.expand_dims(tf.expand_dims(predicted_id, axis=0), axis=0)], -1)
+        data = tf.concat([data, tf.expand_dims(predicted_id, axis=0)], -1)
         # reduce length of input data if too long
         original_data = np.append(original_data, predicted_id.numpy())
-        if original_data[-1] == settings.vocab_size - 1:
-            print('Found end token!')
-            break
+        # if original_data[-1] == settings.vocab_size - 1:
+        #     print('Found end token!')
+        #     break
         # done_time = time.time() - last_tracked_time
         # last_tracked_time += done_time
     print(f'{cur_percent}% done...')

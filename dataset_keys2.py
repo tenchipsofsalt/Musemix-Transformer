@@ -1,6 +1,6 @@
 import numpy as np
 import decode_keys2
-import functions
+import functions_keys2
 import random
 import tensorflow as tf
 import math
@@ -29,7 +29,7 @@ class DataSequence(tf.keras.utils.Sequence):
         count = 0
         for dir_name in dir_names:
             count += 1
-            for file in functions.get_files(f'Music/{dir_name}/wordEvents/', '.npy'):
+            for file in functions_keys2.get_files(f'Music/{dir_name}/keyedEvents2/', '.npy'):
                 self.files.append([file, count])
         random.shuffle(self.files)
         self.file_dict = {
@@ -79,7 +79,7 @@ class DataSequence(tf.keras.utils.Sequence):
 # also not really implemented, takes too much memory to return everything
 class Dataset:
     def __init__(self, dir_path, train=settings_keys2.train_split, val=settings_keys2.val_split):
-        self.files = functions.get_files(dir_path, '.npy')
+        self.files = functions_keys2.get_files(dir_path, '.npy')
         self.file_dict = {
             'train': self.files[:int(len(self.files) * train)],
             'val': self.files[int(len(self.files) * train):int(len(self.files) * (train + val))],

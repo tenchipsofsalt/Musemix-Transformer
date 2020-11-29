@@ -203,7 +203,7 @@ class Decoder(tf.keras.layers.Layer):
 
 # transformer
 class Transformer(tf.keras.Model):
-    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size, pe_input, rate=0.1):
+    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size, pe_input, rate=0.3):
         super(Transformer, self).__init__()
         self.decoder = Decoder(num_layers, d_model, num_heads, dff, vocab_size, pe_input, rate)
 

@@ -1,7 +1,7 @@
 import os
 
 dataset_dir = [f.name for f in os.scandir('Music') if f.is_dir()]
-checkpoint_dir = 'Models/SmAller/128e512h6l512s2b8h256d0.3dr/'
+checkpoint_dir = 'Models/SmAll/256e1024h6l512s2b8h512d0.3dr'
 
 # preprocessing etc.
 sampling_freq = 12  # ticks per beat
@@ -26,14 +26,14 @@ pedal_offset = pause_offset + pause_dim
 artist_offset = pedal_offset + 4
 
 # training
-embed_dim = 128
-num_hid = 512
+embed_dim = 256
+num_hid = 1024
 num_layers = 6
 epochs = 5000
 seq_len = 512
 batch_size = 2
 num_heads = 8
-dense_layer_units = 256
+dense_layer_units = 512
 
 # getting data
 train_split = 0.9

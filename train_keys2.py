@@ -41,7 +41,7 @@ def loss_fn(labels, logits):
 # pass in [batch_size, seq_len]
 vocab_size = settings_keys2.vocab_size
 embed_dim = settings_keys2.embed_dim
-num_hid = settings_keys2.num_hid
+num_hid = settings_keys2.num_hid # doesn't do anything lol...
 num_layers = settings_keys2.num_layers
 checkpoint_dir = settings_keys2.checkpoint_dir
 num_heads = settings_keys2.num_heads

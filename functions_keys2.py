@@ -19,6 +19,7 @@ def get_files(dir_path, extension):
 # (picking from top k most likely elements) Artist must be in settings_keys2.dataset_dir
 def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=None):
     original_data = np.array(data)
+    key_event = tf.reshape(original_data[0], [1, 1])
     data = tf.expand_dims(data, 0)
     if artist is not None:
         try:
@@ -42,19 +43,23 @@ def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=
             cur_percent += 1
             start = time.time()
         shape = data.shape[1]
-        if shape > settings_keys2.seq_len - 1:
+        if shape >= settings_keys2.seq_len:
             shape = settings_keys2.seq_len  # caps it at this value
-            data = data[:, -(settings_keys2.seq_len - 1):]
             if artist is not None:
-                data = tf.concat([artist_id, data], 1)
+                data = data[:, -(settings_keys2.seq_len - 2):]
+                data = tf.concat([key_event, artist_id, data], 1)
+            else:
+                data = data[:, -(settings_keys2.seq_len - 1):]
+                data = tf.concat([key_event, data], 1)
             temp_data = data
         else:
             paddings = tf.constant([[0, 0], [0, settings_keys2.seq_len-shape]])
             temp_data = tf.pad(data, paddings, "CONSTANT")
+        print(temp_data)
         look_ahead_mask = create_masks(temp_data)
         # preprocess_time = time.time() - last_tracked_time
         # last_tracked_time += preprocess_time
-
+        print(shape)
         predictions = model([temp_data, False, look_ahead_mask])
 
         # predict_time = time.time() - last_tracked_time
@@ -98,13 +103,16 @@ def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=
             # everything
             else:
                 predicted_id = tf.cast(tf.random.categorical(predictions, num_samples=1)[-1, 0].numpy(), tf.int32)
+            predicted_id = tf.expand_dims(predicted_id, axis=0)
         # add to input data
-        data = tf.concat([data, tf.expand_dims(tf.expand_dims(predicted_id, axis=0), axis=0)], -1)
+        data = tf.concat([data, tf.expand_dims(predicted_id, axis=0)], -1)
         # reduce length of input data if too long
         original_data = np.append(original_data, predicted_id.numpy())
-        if original_data[-1] == settings_keys2.vocab_size - 1:
-            print('Found end token!')
-            break
+        print(original_data)
+        print(len(original_data))
+        # if original_data[-1] == settings_keys2.vocab_size - 1:
+        #     print('Found end token!')
+        #     break
         # done_time = time.time() - last_tracked_time
         # last_tracked_time += done_time
     print(f'{cur_percent}% done...')
