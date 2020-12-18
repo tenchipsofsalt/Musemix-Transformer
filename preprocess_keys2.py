@@ -242,17 +242,17 @@ def process(file_path):  # needs a file path with / instead of \\.
 
 
 if __name__ == '__main__':
-    # preprocess all files under Music/
+    # preprocess all files under MAESTRO/
     dirs = settings_keys2.dataset_dir
     for directory in dirs:
-        files = functions_keys2.get_files(f'Music/{directory}/', '.mid')
+        files = functions_keys2.get_files(f'MAESTRO/{directory}/', '.midi')
         count = 0
-        if not path.exists(f'Music/{directory}/keyedEvents2/'):
-            makedirs(f'Music/{directory}/keyedEvents2/')
+        if not path.exists(f'MAESTRO/{directory}/keyedEvents2/'):
+            makedirs(f'MAESTRO/{directory}/keyedEvents2/')
         for file in files:
             count += 1
             process(file)
             print(f'Done with file {file} Progress: {count} / {len(files)}.')
 
-        if len(functions_keys2.get_files(f'Music/{directory}/keyedEvents2/', '.npy')) == 0:
+        if len(functions_keys2.get_files(f'MAESTRO/{directory}/keyedEvents2/', '.npy')) == 0:
             print(f'[E] Directory {directory} has no valid keyedEvents2')

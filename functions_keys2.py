@@ -55,11 +55,9 @@ def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=
         else:
             paddings = tf.constant([[0, 0], [0, settings_keys2.seq_len-shape]])
             temp_data = tf.pad(data, paddings, "CONSTANT")
-        print(temp_data)
         look_ahead_mask = create_masks(temp_data)
         # preprocess_time = time.time() - last_tracked_time
         # last_tracked_time += preprocess_time
-        print(shape)
         predictions = model([temp_data, False, look_ahead_mask])
 
         # predict_time = time.time() - last_tracked_time
@@ -108,8 +106,6 @@ def generate(model, data, length, artist=None, temperature=1.0, argmax=False, k=
         data = tf.concat([data, tf.expand_dims(predicted_id, axis=0)], -1)
         # reduce length of input data if too long
         original_data = np.append(original_data, predicted_id.numpy())
-        print(original_data)
-        print(len(original_data))
         # if original_data[-1] == settings_keys2.vocab_size - 1:
         #     print('Found end token!')
         #     break

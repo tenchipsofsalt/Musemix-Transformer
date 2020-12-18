@@ -29,6 +29,6 @@ touhou = False
 
 # generate
 print("Generating w/ starter...")
-starter = functions_keys2.generate(model, [324, 10, 3, 57], 100, artist="Albéniz", temperature=1.0)
+starter = functions_keys2.generate(model, np.load('Music/Bach/keyedEvents2/17 Polonaise.mid.npy')[:512], 1000, artist="Albéniz", temperature=1.0)
 decode_keys2.decode(starter, 'keyedblanktest.mid', touhou=touhou)
 # model.save('INSERT PATH HERE')

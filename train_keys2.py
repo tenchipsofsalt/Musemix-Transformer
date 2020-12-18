@@ -51,7 +51,7 @@ seq_len = settings_keys2.seq_len
 batch_size = settings_keys2.batch_size
 
 # load dataset
-dataSequence = DataSequence(settings_keys2.dataset_dir, batch_size, seq_len)
+dataSequence = DataSequence(settings_keys2.dataset_dir, batch_size, seq_len, use_artist=False)
 # OOM, not feasible
 # train_x, train_y, val_x, val_y, test_x, test_y = dataset.get_all(settings_keys2.seq_len)
 

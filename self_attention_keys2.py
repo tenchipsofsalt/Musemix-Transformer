@@ -190,7 +190,7 @@ class Decoder(tf.keras.layers.Layer):
         x = self.embedding(x)
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
         x += self.pos_encoding[:, :seq_len, :]
-
+        # encoding based on time in sample?
         x = self.dropout(x, training=training)
 
         for i in range(self.num_layers):
@@ -242,7 +242,7 @@ def create_masks(inp):
 
 # custom scheduled learning rate
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, d_model, warmup_steps=4000):
+    def __init__(self, d_model, warmup_steps=1000):
         super(CustomSchedule, self).__init__()
 
         self.d_model = d_model

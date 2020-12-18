@@ -32,6 +32,16 @@ class DataSequence(tf.keras.utils.Sequence):
             for file in functions_keys2.get_files(f'Music/{dir_name}/keyedEvents2/', '.npy'):
                 self.files.append([file, count])
         random.shuffle(self.files)
+
+        # check all files are long enough
+        to_remove = []
+        for file in self.files:
+            if len(np.load(file[0])) <= seq_len + 3:
+                print(f'File {file} is too short. Ignoring.')
+                to_remove.append(file)
+        for file in to_remove:
+            self.files.remove(file)
+
         self.file_dict = {
             'train': self.files[:int(len(self.files) * train)],
             'val': self.files[int(len(self.files) * train):int(len(self.files) * (train + val))],
@@ -39,11 +49,6 @@ class DataSequence(tf.keras.utils.Sequence):
         }
         self.batch_size = batch_size
         self.seq_len = seq_len
-
-        # check all files are long enough
-        for file in self.files:
-            if len(np.load(file[0])) <= seq_len + 3:
-                print(f'File {file} is too short. Please remove and try again.')
 
     def __len__(self):
         return math.ceil(len(self.file_dict['train']) / self.batch_size)

@@ -1,7 +1,7 @@
 import os
 
 dataset_dir = [f.name for f in os.scandir('Music') if f.is_dir()]
-checkpoint_dir = 'Models/keyed2/128e6l512s4b8h256d0.3dr/'
+checkpoint_dir = 'Models/keyed2/128e6l1024s4b8h256d0.3dr/'
 
 # preprocessing etc.
 sampling_freq = 12  # ticks per beat
@@ -34,7 +34,7 @@ embed_dim = 128
 num_hid = 512 # irrelevant for transformers
 num_layers = 6
 epochs = 5000
-seq_len = 512
+seq_len = 1024
 batch_size = 2
 num_heads = 8
 dense_layer_units = 256
